@@ -9,5 +9,6 @@ public class TestT {
         long i1 = Long.parseLong(s1,2);
         long i2 = Long.parseLong(s2, 2);
         System.out.println((i1 & i2)==i2);
+        
     }
 }

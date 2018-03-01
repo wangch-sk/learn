@@ -1,4 +1,4 @@
-package learn;
+package learn.concurrent;
 
 import java.util.concurrent.locks.ReentrantLock;
 

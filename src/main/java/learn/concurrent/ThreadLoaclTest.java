@@ -1,4 +1,4 @@
-package learn;
+package learn.concurrent;
 
 public class ThreadLoaclTest {
     private ThreadLocal<Integer> n = new ThreadLocal<Integer>() {
