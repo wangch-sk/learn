@@ -11,6 +11,8 @@ import redis.clients.jedis.Transaction;
 /**
  * redis watch测试
  * 在睡眠期间，手动修改redis中被watch的值，来模拟在程序运行中被其他线程修改时的情形
+ * 
+ * 在此思考一个问题：事务期间是否一直占有着redis线程，导致其他线程无法访问redis？经过测试，结论是：不会
  * @author chaowang
  * @date 2017年8月18日
  */
@@ -18,11 +20,12 @@ public class WatchTest {
     private static final JedisPoolConfig config = new JedisPoolConfig();
     private static final JedisPool pool = new JedisPool(config, "127.0.0.1", 6379,Protocol.DEFAULT_TIMEOUT,"wangchao");
     
-    public static void get(){
+    public static void set(){
         Jedis jedis = pool.getResource();
         
-        String watch = jedis.watch("aa");//watch key=aa的值
-        System.out.println(Thread.currentThread().getName()+"---"+watch);
+        String watchKey = "aa";
+        String watch = jedis.watch(watchKey);//watch key=aa的值
+        System.out.println(Thread.currentThread().getName()+"---watch---"+watch);
         Transaction trans = jedis.multi();
         trans.set("bb", "222");
         try {
@@ -36,13 +39,24 @@ public class WatchTest {
         for (Object resp : result) {
             System.out.println(resp);
         }
+//        jedis.unwatch();//可以不需要，因为 EXEC 命令会执行事务，因此 WATCH 命令的效果已经产生了；而 DISCARD 命令在取消事务的同时也会取消所有对 key 的监视，因此这两个命令执行之后，就没有必要执行 UNWATCH 了
         
-        jedis.unwatch();//不在watch
-        
-        pool.returnResource(jedis);
+        jedis.close();
     }
     
-    public static void main(String[] args) {
+    public static void get(){
+        Jedis jedis = pool.getResource();
+        System.out.println("cc="+jedis.get("cc"));
+        jedis.close();
+    }
+    
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(new Runnable() {
+            public void run() {
+                WatchTest.set();
+            }
+        }).start();
+        Thread.sleep(100);
         get();
     }
 }
